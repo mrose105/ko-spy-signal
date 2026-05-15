@@ -62,10 +62,11 @@ python Python/ko_spy_fakeout.py
 
 ## Charts
 
-| Chart | Description |
-|-------|-------------|
-| `output/charts/price_correlation.png` | Rolling KO/SPY price correlation over the analysis window |
-| `output/charts/win_rate.png` | Fakeout signal win rate broken out by SPY regime (BULL/NEUT/BEAR) |
+### Price Correlation
+![KO/SPY Rolling Price Correlation](output/charts/price_correlation.png)
+
+### Fakeout Win Rate by SPY Regime
+![Fakeout Signal Win Rate](output/charts/win_rate.png)
 
 Full multi-page chart deck: `output/ko_spy_charts.pdf`
 
