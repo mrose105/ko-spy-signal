@@ -12,7 +12,10 @@ ko-spy-signal/
 ├── R/
 │   └── ko_spyRegression.R  # regression analysis and statistical modeling
 └── output/
-    └── ko_spy_charts.pdf   # charts generated from R analysis
+    ├── ko_spy_charts.pdf          # full chart deck from R analysis
+    └── charts/
+        ├── price_correlation.png  # KO/SPY rolling price correlation
+        └── win_rate.png           # fakeout signal win rate by regime
 ```
 
 ## Python scripts
@@ -56,6 +59,15 @@ python Python/ko_spy_fakeout.py
 **Quality grading** (STRONG / MOD / WEAK) is based on SPY regime confirmation:
 - `UP_FAKE` + SPY bullish = STRONG (KO can't hold breakout despite tailwind → relative weakness)
 - `DN_FAKE` + SPY bearish = STRONG (KO holds despite headwind → relative strength)
+
+## Charts
+
+| Chart | Description |
+|-------|-------------|
+| `output/charts/price_correlation.png` | Rolling KO/SPY price correlation over the analysis window |
+| `output/charts/win_rate.png` | Fakeout signal win rate broken out by SPY regime (BULL/NEUT/BEAR) |
+
+Full multi-page chart deck: `output/ko_spy_charts.pdf`
 
 ## Historical output sections
 
