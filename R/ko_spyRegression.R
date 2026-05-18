@@ -444,4 +444,93 @@ print(p1); print(p2); print(p3); print(p4); print(p5); print(p6)
 dev.off()
 
 cat("\nAll charts saved ->", CHART_FILE, "\n")
+
+# ════════════════════════════════════════════════════════════
+# PNG CHARTS — price_correlation.png and win_rate.png
+# ════════════════════════════════════════════════════════════
+dir.create("output/charts", recursive = TRUE, showWarnings = FALSE)
+
+# ── price_correlation.png ─────────────────────────────────
+# p_price: KO and SPY indexed to 100 at window start
+price_indexed <- daily |>
+  mutate(
+    spy_idx = spy_close / first(spy_close) * 100,
+    ko_idx  = ko_close  / first(ko_close)  * 100
+  ) |>
+  select(date, spy_idx, ko_idx) |>
+  pivot_longer(c(spy_idx, ko_idx), names_to = "symbol", values_to = "value")
+
+p_price <- ggplot(price_indexed, aes(x = date, y = value, color = symbol)) +
+  geom_line(linewidth = 0.8) +
+  scale_color_manual(values = c(spy_idx = "#185FA5", ko_idx = "#D85A30"),
+                     labels  = c(spy_idx = "SPY",     ko_idx = "KO")) +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  labs(title    = "KO vs SPY Indexed Price (base = 100)",
+       subtitle = "5-year daily close, rebased to 100 at start of window",
+       x = NULL, y = "Indexed price", color = NULL) +
+  theme_clean
+
+# p_corr_bar: rolling 20-day correlation bars + LOESS trend
+rolling_corr <- daily |>
+  mutate(
+    rolling_corr = rollapply(
+      data      = cbind(spy_ret, ko_ret),
+      width     = 20,
+      FUN       = function(m) cor(m[, 1], m[, 2], use = "complete.obs"),
+      by.column = FALSE,
+      fill      = NA,
+      align     = "right"
+    )
+  ) |>
+  filter(!is.na(rolling_corr))
+
+p_corr_bar <- ggplot(rolling_corr, aes(x = date, y = rolling_corr)) +
+  geom_col(aes(fill = rolling_corr > 0), alpha = 0.65, width = 2) +
+  geom_smooth(method = "loess", span = 0.2, se = FALSE,
+              color = "#185FA5", linewidth = 1) +
+  geom_hline(yintercept = 0, color = "gray30") +
+  scale_fill_manual(values = c("TRUE" = "#0F6E56", "FALSE" = "#D85A30"), guide = "none") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  labs(title    = "KO/SPY Rolling 20-Day Correlation",
+       subtitle = "Green = positive | Red = negative | Blue line = LOESS trend",
+       x = NULL, y = "Correlation") +
+  theme_clean
+
+p_combined <- p_price / p_corr_bar
+ggsave("output/charts/price_correlation.png", p_combined,
+       width = 10, height = 7, dpi = 150)
+cat("Saved -> output/charts/price_correlation.png\n")
+
+# ── win_rate.png ──────────────────────────────────────────
+# Intraday signal win rates from Python backtest (last 365 days)
+# Values from ko_spy_intraday.py: S1/S2/S4 × 60min and 0DTE windows
+win_data <- data.frame(
+  signal  = rep(c("S1: Both Down Fade\n(buy SPY calls)",
+                   "S4: SPY Up / KO Down\n(buy SPY puts)",
+                   "S2: SPY Down / KO Up\n(buy SPY calls)"), each = 2),
+  window  = rep(c("60 min", "0DTE"), 3),
+  win_pct = c(62.6, 64.5,   # S1
+              52.8, 63.9,   # S4
+              43.8, 52.9)   # S2
+)
+win_data$signal <- factor(win_data$signal,
+                           levels = c("S1: Both Down Fade\n(buy SPY calls)",
+                                      "S4: SPY Up / KO Down\n(buy SPY puts)",
+                                      "S2: SPY Down / KO Up\n(buy SPY calls)"))
+
+p_win_rate <- ggplot(win_data, aes(x = signal, y = win_pct, fill = window)) +
+  geom_col(position = "dodge", alpha = 0.85) +
+  geom_hline(yintercept = 50, linetype = "dashed", color = "gray50") +
+  scale_fill_manual(values = c("60 min" = "#185FA5", "0DTE" = "#D85A30")) +
+  scale_y_continuous(limits = c(0, 80), labels = function(x) paste0(x, "%")) +
+  labs(title    = "KO/SPY Intraday Signal Win Rates (Last 365 Days)",
+       subtitle  = "Intraday signal (S1 both down fade): 64.5% win rate within 60 minutes",
+       x = NULL, y = "Win rate", fill = "Window") +
+  theme_clean +
+  theme(axis.text.x = element_text(size = 9))
+
+ggsave("output/charts/win_rate.png", p_win_rate,
+       width = 9, height = 6, dpi = 150)
+cat("Saved -> output/charts/win_rate.png\n")
+
 cat("Done.\n")
