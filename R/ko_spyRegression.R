@@ -503,31 +503,34 @@ cat("Saved -> output/charts/price_correlation.png\n")
 
 # ── win_rate.png ──────────────────────────────────────────
 # Intraday signal win rates from Python backtest (last 365 days)
-# Values from ko_spy_intraday.py: S1/S2/S4 × 60min and 0DTE windows
+# Values from ko_spy_intraday.py: S1/S2/S4 × 0DTE and 3DTE windows
 win_data <- data.frame(
-  signal  = rep(c("S1: Both Down Fade\n(buy SPY calls)",
-                   "S4: SPY Up / KO Down\n(buy SPY puts)",
-                   "S2: SPY Down / KO Up\n(buy SPY calls)"), each = 2),
-  window  = rep(c("60 min", "0DTE"), 3),
-  win_pct = c(62.6, 64.5,   # S1
-              52.8, 63.9,   # S4
-              43.8, 52.9)   # S2
+  signal  = rep(c("S1: Both Down Fade",
+                  "S4: SPY Up / KO Down",
+                  "S2: SPY Down / KO Up"), each = 2),
+  window  = rep(c("0DTE", "3DTE"), 3),
+  win_pct = c(64.5, 67.3,   # S1
+              63.9, 63.9,   # S4
+              52.9, 67.8)   # S2
 )
 win_data$signal <- factor(win_data$signal,
-                           levels = c("S1: Both Down Fade\n(buy SPY calls)",
-                                      "S4: SPY Up / KO Down\n(buy SPY puts)",
-                                      "S2: SPY Down / KO Up\n(buy SPY calls)"))
+                           levels = c("S1: Both Down Fade",
+                                      "S4: SPY Up / KO Down",
+                                      "S2: SPY Down / KO Up"))
 
 p_win_rate <- ggplot(win_data, aes(x = signal, y = win_pct, fill = window)) +
   geom_col(position = "dodge", alpha = 0.85) +
+  geom_text(aes(label = sprintf("%.1f%%", win_pct)),
+            position = position_dodge(width = 0.9),
+            vjust = -0.4, size = 3.5) +
   geom_hline(yintercept = 50, linetype = "dashed", color = "gray50") +
-  scale_fill_manual(values = c("60 min" = "#185FA5", "0DTE" = "#D85A30")) +
+  scale_fill_manual(values = c("0DTE" = "#D85A30", "3DTE" = "#185FA5")) +
   scale_y_continuous(limits = c(0, 80), labels = function(x) paste0(x, "%")) +
-  labs(title    = "KO/SPY Intraday Signal Win Rates (Last 365 Days)",
-       subtitle  = "Intraday signal (S1 both down fade): 64.5% win rate within 60 minutes",
+  labs(title    = "KO/SPY Intraday Signal Win Rates by Hold Period",
+       subtitle  = "Last 365 days | comparing same-day closes vs 3 DTE holds",
        x = NULL, y = "Win rate", fill = "Window") +
   theme_clean +
-  theme(axis.text.x = element_text(size = 9))
+  theme(axis.text.x = element_text(size = 10))
 
 ggsave("output/charts/win_rate.png", p_win_rate,
        width = 9, height = 6, dpi = 150)
